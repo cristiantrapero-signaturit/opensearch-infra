@@ -4,7 +4,7 @@ Terraform project to setup opensearch cluster in AWS account.
 
 ## Configure data to deploy
 
-You have to setup the main.tf file to config the deployment before apply it. You have to setup the followings variables:
+You have to setup the **main.tf** file to config the deployment before apply it. You have to setup the followings variables:
 
 1. **cluster_name**: The name of the cluster and AWS resources. *Ex: "opensearch-cluster"*
 2. **key_name**: The key pair name for EC2 ssh access without .pem extension. *Ex: "mykeypair"*
@@ -14,7 +14,7 @@ You have to setup the main.tf file to config the deployment before apply it. You
 6. **route53_zone**: Route53 zone ID. *Ex: "Z0968496506KVSMPCSX4"*
 7. **route53_domain**: Route53 domain for assign private IPs to EC2 instances. *Ex: "opensearch.local"*
 8. **cidr_block**  = VPC cidr block. *Ex: "10.0.0.0/16"*
-9. **subnet_availability_zone**: Subnet availability zone. *Ex: "eu-west-1b"*
+9. **subnet_availability_zones**: Subnet availability zone. *Ex: "eu-west-1b"*
 
 ### Setup AWS credentials
 

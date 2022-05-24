@@ -3,30 +3,44 @@ variable "opensearch_nodes"{
     description = "map of nodes configuration"
     type        = map(map(string))
     default     = {
+        master1 = {
+            name = "ops-master-1"
+            ami  = "ami-0c1bc246476a5572b"
+            instance_type = "t2.micro"
+            disk_size     = "6"
+            role          = "master"
+        }
+        master2 = {
+            name = "ops-master-2"
+            ami  = "ami-0c1bc246476a5572b"
+            instance_type = "t2.micro"
+            disk_size     = "6"
+            role          = "master"
+            
+        },
+        master3 = {
+            name = "ops-master-3"
+            ami  = "ami-0c1bc246476a5572b"
+            instance_type = "t2.micro"
+            disk_size     = "6"
+            role          = "master"
+        },
         node1 = {
-            name = "opensearch-node1"
+            name = "ops-data-1"
             ami  = "ami-0c1bc246476a5572b"
             instance_type = "t2.micro"
             disk_size     = "6"
             role          = "data"
         },
         node2 = {
-            name = "opensearch-node2"
-            ami  = "ami-0c1bc246476a5572b"
-            instance_type = "t2.micro"
-            disk_size     = "6"
-            role          = "data"
-            
-        },
-        node3 = {
-            name = "opensearch-node3"
+            name = "ops-data-2"
             ami  = "ami-0c1bc246476a5572b"
             instance_type = "t2.micro"
             disk_size     = "6"
             role          = "data"
         },
         dashboard = {
-            name = "opensearch-dashboard"
+            name = "ops-dashboard"
             ami  = "ami-0c1bc246476a5572b"
             instance_type = "t2.micro"
             disk_size     = "6"
@@ -41,10 +55,10 @@ variable "create_vpc" {
     default         = false
 }
 
-variable "env" {
+variable "stack" {
     type            = string
-    description     = "env tag"
-    default         = "dev"
+    description     = "application stack name"
+    default         = "opensearch"
 }
 
 variable "cluster_name" {
@@ -53,14 +67,10 @@ variable "cluster_name" {
     default         = "opensearch-cluster"
 }  
 
-variable "key_name" {
-    type            = string
-    description     = "Private key"
-}  
 
 variable "sg_vpc_id" {
     type            = list(string)
-    description     = "sg_vcp id"
+    description     = "security group vpc id"
 }  
 
 variable "subnet_id" {
@@ -81,7 +91,7 @@ variable "route53_zone" {
 
 variable "route53_domain" {
     type            = string
-    description     = "your route53 zonde domain (dom.com)"
+    description     = "your route53 zone domain (domain.com)"
 }
 
 variable "cidr_block" {
@@ -89,7 +99,12 @@ variable "cidr_block" {
     description     = "cidr block"
 }
 
-variable "subnet_availability_zone" {
+variable "subnet_availability_zones" {
+    type            = list(string)
+    description     = "subnet_availability_zones"
+}
+
+variable "region" {
     type            = string
-    description     = "subnet_availability_zone"
+    description     = "region where deploy the service"
 }
