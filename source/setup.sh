@@ -19,8 +19,9 @@ echo "Basic config" >> ~/setup.log
 sysctl -w vm.max_map_count=262144
 hostname "${node_name}"
 export ipaddr=$(hostname -I)
-yum install docker
-
+yum install -y docker
+service docker start
+service docker enable
 
 if [[ "${node_role}" == "data" ]]
 then
@@ -51,7 +52,7 @@ network.host: $ipaddr
 path.data: ${path_to_data}
 EOT
 
-    if [[ "${node_name}" == "ops-master-1.opensearch.local" ]]
+    if [[ "${node_name}" == "ops-master-1.${domain}" ]]
     then
         # Create the certificates
         #./generate-certificates.sh

@@ -8,7 +8,7 @@ resource "aws_vpc" "opensearch_vpc" {
   tags = {
     Name      = "${var.stack}-vpc"
     Stack     = var.stack
-    Service   = "${var.stack}-vpc"
+    Service   = "vpc"
     Terraform = "true"
   }
 }
@@ -18,16 +18,18 @@ resource "aws_subnet" "opensearch_subnet" {
   count             = (var.create_vpc == true ? 1 : 0)
   vpc_id            = aws_vpc.opensearch_vpc[count.index].id
   cidr_block        = var.cidr_block
+  # TODO: create multiples availability zones
   availability_zone = var.subnet_availability_zones[count.index]
 
   tags = {
     Name      = "${var.stack}-subnet"
     Stack     = var.stack
-    Service   = "${var.stack}-subnet"
+    Service   = "subnet"
     Terraform = "true"
   }
 }
 
+# TODO: create internet interface if public_vpc == true
 # Create internet gateway
 # resource "aws_internet_gateway" "opensearch_igw" {
 #   count  = (var.create_vpc == true ? 1 : 0)
@@ -40,6 +42,7 @@ resource "aws_subnet" "opensearch_subnet" {
 #   }
 # }
 
+# TODO: create route table if public_vpc == true
 # resource "aws_route_table" "opensearch_route_table_igw" {
 #   count  = (var.create_vpc == true ? 1 : 0)
 #   vpc_id = aws_vpc.opensearch_vpc[count.index].id
@@ -57,6 +60,7 @@ resource "aws_subnet" "opensearch_subnet" {
 #   }
 # }
 
+# TODO: create table association if public_vpc == true
 # resource "aws_route_table_association" "opensearch_table_association" {
 #   count          = (var.create_vpc == true ? 1 : 0)
 #   subnet_id      = (var.create_vpc == true ? aws_subnet.opensearch_subnet[0].id : var.subnet_id)
@@ -112,11 +116,12 @@ resource "aws_security_group" "opensearch_security_group" {
   tags = {
     Name      = "${var.stack}-sg"
     Stack     = var.stack
-    Service   = "${var.stack}-sg"
+    Service   = "security-group"
     Terraform = "true"
   }
 }
 
+# TODO: create ssm endpoints if public_vpc == false
 resource "aws_vpc_endpoint" "ec2_messages" {
   count             = (var.create_vpc == true ? 1 : 0)
   vpc_id            = aws_vpc.opensearch_vpc[count.index].id
@@ -133,11 +138,12 @@ resource "aws_vpc_endpoint" "ec2_messages" {
   tags = {
     Name      = "${var.stack}-ec2-messages-endpoint"
     Stack     = var.stack
-    Service   = "${var.stack}-ec2-messages-endpoint"
+    Service   = "vpc-endpoint"
     Terraform = "true"
   }
 }
 
+# TODO: create ssm endpoints if public_vpc == false
 resource "aws_vpc_endpoint" "ssm" {
   count             = (var.create_vpc == true ? 1 : 0)
   vpc_id            = aws_vpc.opensearch_vpc[count.index].id
@@ -154,11 +160,12 @@ resource "aws_vpc_endpoint" "ssm" {
   tags = {
     Name      = "${var.stack}-ssm-endpoint"
     Stack     = var.stack
-    Service   = "${var.stack}-ssm-endpoint"
+    Service   = "vpc-endpoint"
     Terraform = "true"
   }
 }
 
+# TODO: create ssm endpoints if public_vpc == false
 resource "aws_vpc_endpoint" "ssm_messages" {
   count             = (var.create_vpc == true ? 1 : 0)
   vpc_id            = aws_vpc.opensearch_vpc[count.index].id
@@ -175,7 +182,22 @@ resource "aws_vpc_endpoint" "ssm_messages" {
   tags = {
     Name      = "${var.stack}-ssm-messages-endpoint"
     Stack     = var.stack
-    Service   = "${var.stack}-ssm-messages-endpoint"
+    Service   = "vpc-endpoint"
+    Terraform = "true"
+  }
+}
+
+resource "aws_vpc_endpoint" "s3" {
+  count             = (var.create_vpc == true ? 1 : 0)
+  vpc_id            = aws_vpc.opensearch_vpc[count.index].id
+  service_name      = "com.amazonaws.${var.region}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids = [aws_vpc.opensearch_vpc[count.index].default_route_table_id]
+
+  tags = {
+    Name      = "${var.stack}-s3-endpoint"
+    Stack     = var.stack
+    Service   = "vpc-endpoint"
     Terraform = "true"
   }
 }
@@ -208,7 +230,7 @@ EOF
   tags = {
     Name      = "${var.stack}-iam-role"
     Stack     = var.stack
-    Service   = "${var.stack}-iam-role"
+    Service   = "iam-role"
     Terraform = "true"
   }
 }
@@ -225,7 +247,7 @@ resource "aws_iam_instance_profile" "ec2-ssm-iam-profile" {
   tags = {
     Name      = "${var.stack}-iam-instance-profile"
     Stack     = var.stack
-    Service   = "${var.stack}-iam-instance-profile"
+    Service   = "iam-instance-profile"
     Terraform = "true"
   }
 }
@@ -255,7 +277,7 @@ resource "aws_instance" "opensearch_cluster" {
     Name      = "${each.value.name}"
     role      = "${each.value.role}"
     Stack     = var.stack
-    Service   = "${var.stack}-ec2"
+    Service   = "ec2-instance"
     Terraform = "true"
   }
 
