@@ -3,20 +3,13 @@
 touch ~/setup.log
 chmod 777 ~/setup.log
 
-# Check if it is a first time setup
-FILE=~/first_install
-if [ -f "$FILE" ]; then
-    echo "$FILE exist. Existing setup."
-    exit 0
-fi
-
 echo "Node name: ${node_name}" >> ~/setup.log
 echo "Node role: ${node_role}" >> ~/setup.log
 echo "Cluster name: ${cluster_name}" >> ~/setup.log
 echo "Domain: ${domain}" >> ~/setup.log
-echo "Path to data: ${path_to_data}" >> ~/setup.log
 echo "Basic config" >> ~/setup.log
 
+# Persist config
 maxmap="vm.max_map_count=262144"
 if ! test "$(grep $maxmap /etc/sysctl.conf)"
 then
@@ -42,7 +35,7 @@ cat <<EOT > ~/opensearch.yml
 cluster.name: ${cluster_name}
 node.name: ${node_name}
 discovery.seed_hosts: ["ops-master-1.${domain}","ops-master-2.${domain}","ops-master-3.${domain}","ops-data-1.${domain}","ops-data-2.${domain}","ops-dashboard.${domain}"]
-network.host: [_local_, _site_]
+network.publish_host: $ipaddr
 node.roles: [ data, ingest ]
 EOT
 
@@ -70,6 +63,7 @@ services:
     restart: unless-stopped
     ports:
       - 9200:9200
+      - 9300:9300
       - 9600:9600 # required for Performance Analyzer
     networks:
       - opensearch-net
@@ -91,7 +85,7 @@ cat <<EOT > ~/opensearch.yml
 cluster.name: ${cluster_name}
 node.name: ${node_name}
 discovery.seed_hosts: ["ops-master-1.${domain}","ops-master-2.${domain}","ops-master-3.${domain}","ops-data-1.${domain}","ops-data-2.${domain}","ops-dashboard.${domain}"]
-network.host: [_local_, _site_]
+network.publish_host: $ipaddr
 node.roles: [ cluster_manager ]
 EOT
 
@@ -119,6 +113,7 @@ services:
     restart: unless-stopped
     ports:
       - 9200:9200
+      - 9300:9300
       - 9600:9600 # required for Performance Analyzer
     networks:
       - opensearch-net
@@ -186,7 +181,7 @@ services:
   ${node_name}:
     image: opensearchproject/opensearch-dashboards:2.0.0
     container_name: ${node_name}
-    restart: always
+    restart: unless-stopped
     volumes:
       - ${node_name}:/usr/share/opensearch/data
       - ./opensearch_dashboards.yml:/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml
