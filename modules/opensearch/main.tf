@@ -13,6 +13,9 @@ resource "aws_vpc" "opensearch_vpc" {
   }
 }
 
+data "aws_availability_zones" "all" {}
+
+
 # Create VPC subnet if create_vpc == true
 resource "aws_subnet" "opensearch_subnet" {
   count             = (var.create_vpc == true ? 1 : 0)
@@ -209,7 +212,6 @@ data "template_file" "setup" {
     cluster_name = var.cluster_name
     node_name    = "${each.value.name}.${var.route53_domain}"
     node_role    = each.value.role
-    path_to_data = var.path_to_data
     domain       = "${var.route53_domain}"
   }
 }

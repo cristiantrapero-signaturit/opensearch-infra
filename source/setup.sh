@@ -42,7 +42,7 @@ services:
       - cluster.name=${cluster_name}
       - node.name=${node_name}
       - discovery.seed_hosts=ops-master-1.${domain},ops-master-2.${domain},ops-master-3.${domain},ops-data-1.${domain},ops-data-2.${domain},ops-dashboard.${domain}
-      - cluster.initial_master_nodes=ops-master-1.${domain},ops-master-2.${domain},ops-master-3.${domain}
+      - cluster.initial_cluster_manager_nodes=ops-master-1.${domain},ops-master-2.${domain},ops-master-3.${domain}
       - network.publish_host=$ipaddr
       - node.roles=data,ingest
       - bootstrap.memory_lock=true # along with the memlock settings below, disables swapping
@@ -87,7 +87,7 @@ services:
       - cluster.name=${cluster_name}
       - node.name=${node_name}
       - discovery.seed_hosts=ops-master-1.${domain},ops-master-2.${domain},ops-master-3.${domain},ops-data-1.${domain},ops-data-2.${domain},ops-dashboard.${domain}
-      - cluster.initial_master_nodes=ops-master-1.${domain},ops-master-2.${domain},ops-master-3.${domain}
+      - cluster.initial_cluster_manager_nodes=ops-master-1.${domain},ops-master-2.${domain},ops-master-3.${domain}
       - network.publish_host=$ipaddr
       - node.roles=cluster_manager
       - bootstrap.memory_lock=true # along with the memlock settings below, disables swapping
