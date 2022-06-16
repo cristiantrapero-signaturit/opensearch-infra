@@ -205,16 +205,6 @@ resource "aws_vpc_endpoint" "s3" {
   }
 }
 
-data "template_file" "setup" {
-  for_each = var.opensearch_nodes
-  template = file("./source/setup.sh")
-  vars = {
-    cluster_name = var.cluster_name
-    node_name    = "${each.value.name}.${var.route53_domain}"
-    node_role    = each.value.role
-    domain       = "${var.route53_domain}"
-  }
-}
 
 resource "aws_iam_role" "ec2-ssm-role" {
   name               = "ec2-ssm-role"
@@ -254,7 +244,6 @@ resource "aws_iam_instance_profile" "ec2-ssm-iam-profile" {
   }
 }
 
-
 resource "aws_instance" "opensearch_cluster" {
   for_each               = var.opensearch_nodes
   ami                    = each.value.ami
@@ -262,8 +251,9 @@ resource "aws_instance" "opensearch_cluster" {
   monitoring             = true
   subnet_id              = (var.create_vpc == true ? aws_subnet.opensearch_subnet[0].id : var.subnet_id)
   vpc_security_group_ids = (var.create_vpc == true ? [aws_security_group.opensearch_security_group[0].id] : var.sg_vpc_id)
-  user_data              = data.template_file.setup[each.key].rendered
+  user_data              = "${file("source/setup.sh")}"
   iam_instance_profile   = aws_iam_instance_profile.ec2-ssm-iam-profile.id
+
   # ebs_block_device {
   #   device_name = "/dev/sdb"
   #   volume_size = each.value.disk_size
@@ -276,15 +266,33 @@ resource "aws_instance" "opensearch_cluster" {
   # }
 
   tags = {
-    Name      = "${each.value.name}"
+    Name      = "${each.value.name}.${var.route53_domain}"
     role      = "${each.value.role}"
     Stack     = var.stack
     Service   = "ec2-instance"
     Terraform = "true"
   }
-
 }
 
+resource "aws_ssm_parameter" "opensearch-ssm-parameter" {
+  for_each = aws_instance.opensearch_cluster
+  name = "${each.value.private_ip}"
+  type = "StringList"
+  # Node name, role, cluster name
+  value = format("%s,%s,%s", "${each.value.tags.Name}", "${each.value.tags.role}", var.cluster_name)
+}
+
+resource "aws_ssm_parameter" "seed-hosts-ssm-parameter" {
+  name = "seed_hosts"
+  type = "StringList"
+  value = "ops-master-1.${var.route53_domain},ops-master-2.${var.route53_domain},ops-master-3.${var.route53_domain},ops-data-1.${var.route53_domain},ops-data-2.${var.route53_domain}"
+}
+
+resource "aws_ssm_parameter" "cluster-managers-ssm-parameter" {
+  name = "initial_cluster_manager_nodes"
+  type = "StringList"
+  value = "ops-master-1.${var.route53_domain},ops-master-2.${var.route53_domain},ops-master-3.${var.route53_domain}"
+}
 
 resource "aws_route53_record" "opensearch-router53" {
   for_each = aws_instance.opensearch_cluster
