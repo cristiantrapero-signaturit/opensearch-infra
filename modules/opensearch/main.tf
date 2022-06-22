@@ -254,16 +254,16 @@ resource "aws_instance" "opensearch_cluster" {
   user_data              = "${file("source/setup.sh")}"
   iam_instance_profile   = aws_iam_instance_profile.ec2-ssm-iam-profile.id
 
-  # ebs_block_device {
-  #   device_name = "/dev/sdb"
-  #   volume_size = each.value.disk_size
-  #   tags = {
-  #     Name      = each.value.name
-  #     Stack     = var.stack
-  #     Service   = "${var.stack}-ebs"
-  #     Terraform = "true"
-  #   }
-  # }
+  ebs_block_device {
+    device_name = "/dev/sdb"
+    volume_size = each.value.disk_size
+    tags = {
+      Name      = each.value.name
+      Stack     = var.stack
+      Service   = "${var.stack}-ebs"
+      Terraform = "true"
+    }
+  }
 
   tags = {
     Name      = "${each.value.name}.${var.route53_domain}"
@@ -298,11 +298,8 @@ resource "aws_route53_record" "opensearch-router53" {
   for_each = aws_instance.opensearch_cluster
 
   zone_id = var.route53_zone
-  name    = "${each.value.tags.Name}.${var.route53_domain}"
+  name    = "${each.value.tags.Name}"
   type    = "A"
   ttl     = "300"
   records = [each.value.private_ip]
-
 }
-
-

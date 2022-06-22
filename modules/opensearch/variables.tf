@@ -6,46 +6,46 @@ variable "opensearch_nodes"{
         master1 = {
             name = "ops-master-1"
             ami  = "ami-0c1bc246476a5572b"
-            instance_type = "t2.micro"
+            instance_type = "t2.medium"
             disk_size     = "6"
-            role          = "cluster_manager"
-        }
+            role          = "master"
+        },
         master2 = {
             name = "ops-master-2"
             ami  = "ami-0c1bc246476a5572b"
-            instance_type = "t2.micro"
+            instance_type = "t2.medium"
             disk_size     = "6"
-            role          = "cluster_manager"
+            role          = "master"
             
         },
         master3 = {
             name = "ops-master-3"
             ami  = "ami-0c1bc246476a5572b"
-            instance_type = "t2.micro"
+            instance_type = "t2.medium"
             disk_size     = "6"
-            role          = "cluster_manager"
+            role          = "master"
         },
-        # node1 = {
-        #     name = "ops-data-1"
-        #     ami  = "ami-0c1bc246476a5572b"
-        #     instance_type = "t2.micro"
-        #     disk_size     = "6"
-        #     role          = "data"
-        # },
-        # node2 = {
-        #     name = "ops-data-2"
-        #     ami  = "ami-0c1bc246476a5572b"
-        #     instance_type = "t2.micro"
-        #     disk_size     = "6"
-        #     role          = "data"
-        # },
-        # dashboard = {
-        #     name = "ops-dashboard"
-        #     ami  = "ami-0c1bc246476a5572b"
-        #     instance_type = "t2.micro"
-        #     disk_size     = "6"
-        #     role          = "dashboard"
-        # }
+        node1 = {
+            name = "ops-data-1"
+            ami  = "ami-0c1bc246476a5572b"
+            instance_type = "t2.medium"
+            disk_size     = "6"
+            role          = "data"
+        },
+        node2 = {
+            name = "ops-data-2"
+            ami  = "ami-0c1bc246476a5572b"
+            instance_type = "t2.medium"
+            disk_size     = "6"
+            role          = "data"
+        },
+        dashboard = {
+            name = "ops-dashboard"
+            ami  = "ami-0c1bc246476a5572b"
+            instance_type = "t2.medium"
+            disk_size     = "6"
+            role          = "dashboard"
+        }
     }
 }   
 
