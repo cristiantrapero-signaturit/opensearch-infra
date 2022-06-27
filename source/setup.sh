@@ -67,8 +67,13 @@ export SEED_HOSTS=$(aws ssm get-parameter --region eu-west-1 --name seed_hosts |
 export MANAGER_NODES=$(aws ssm get-parameter --region eu-west-1 --name initial_cluster_manager_nodes | jq -r '.Parameter.Value')
 
 # 4. Get AWS credentials for add S3 snapshot repository
-export ACCESS_KEY_ID=$(aws ssm get-parameter --region eu-west-1 --name access_key_id | jq -r '.Parameter.Value')
-export SECRET_ACCESS_KEY=$(aws ssm get-parameter --region eu-west-1 --name secret_access_key | jq -r '.Parameter.Value')
+export ACCESS_KEY_ID=$(aws ssm get-parameter --region eu-west-1 --name access_key_id --with-decryption | jq -r '.Parameter.Value')
+export SECRET_ACCESS_KEY=$(aws ssm get-parameter --region eu-west-1 --name secret_access_key --with-decryption | jq -r '.Parameter.Value')
+
+# 5. Get password for admin and dashboard users
+export ADMIN_PASSWORD_HASHED=$(aws ssm get-parameter --region eu-west-1 --name admin_password_hash --with-decryption | jq -r '.Parameter.Value')
+export DASHBOARD_PASSWORD=$(aws ssm get-parameter --region eu-west-1 --name dashboard_password --with-decryption | jq -r '.Parameter.Value')
+export DASHBOARD_PASSWORD_HASHED=$(aws ssm get-parameter --region eu-west-1 --name dashboard_password_hash --with-decryption | jq -r '.Parameter.Value')
 
 echo "Change hostname to ${NODE_NAME}" >> ~/setup.log
 hostnamectl set-hostname "${NODE_NAME}"
@@ -82,6 +87,9 @@ if [ "${NODE_ROLE}" == "data" ]
 then
 	export NODE_ROLE="data,ingest"
 fi
+
+# Custom opensearch file
+
 
 # Create opensearch file with s3 repository plugin enabled
 cat <<EOT > ~/Dockerfile
@@ -97,6 +105,30 @@ RUN echo ${ACCESS_KEY_ID} | /usr/share/opensearch/bin/opensearch-keystore add --
 RUN echo ${SECRET_ACCESS_KEY} | /usr/share/opensearch/bin/opensearch-keystore add --stdin s3.client.default.secret_key
 EOT
 
+# Define the opensearch users
+cat <<EOT > ~/internal_users.yml
+---
+# This is the internal user database
+# The hash value is a bcrypt hash and can be generated with plugin/tools/hash.sh
+
+_meta:
+  type: "internalusers"
+  config_version: 2
+
+admin:
+  hash: "$ADMIN_PASSWORD_HASHED"
+  reserved: true
+  backend_roles:
+  - "admin"
+  description: "Admin user"
+
+kibanaserver:
+  hash: "$DASHBOARD_PASSWORD_HASHED"
+  reserved: true
+  description: "OpenSearch Dashboard user"
+EOT
+
+# Service definition
 cat <<EOT > ~/docker-compose.yml
 version: '3'
 services:
@@ -121,6 +153,7 @@ services:
         hard: 65536
     volumes:
       - ${NODE_NAME}:/usr/share/opensearch/data
+      - ./internal_users.yml:/usr/share/opensearch/plugins/opensearch-security/securityconfig/internal_users.yml
     restart: unless-stopped
     ports:
       - 9200:9200
@@ -135,6 +168,20 @@ EOT
 
 else
 
+cat <<EOT > ~/opensearch_dashboards.yml
+---
+opensearch.username: "kibanaserver"
+opensearch.password: "${DASHBOARD_PASSWORD}"
+opensearch.ssl.verificationMode: none
+server.host: '0'
+opensearch.requestHeadersWhitelist: [authorization, securitytenant]
+opensearch_security.multitenancy.enabled: true
+opensearch_security.multitenancy.tenants.preferred: [Private, Global]
+opensearch_security.readonly_mode.roles: [kibana_read_only]
+# Use this setting if you are running opensearch-dashboards without https
+opensearch_security.cookie.secure: false
+EOT
+
 # Dashboard
 cat <<EOT > ~/docker-compose.yml
 version: '3'
@@ -145,6 +192,7 @@ services:
     restart: unless-stopped
     volumes:
       - ${NODE_NAME}:/usr/share/opensearch/data
+      - ./opensearch_dashboards.yml:/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml
     environment:
       OPENSEARCH_HOSTS: '["https://ops-master-1.opensearch.local:9200","https://ops-master-2.opensearch.local:9200","https://ops-master-3.opensearch.local:9200"]'
     ports:
